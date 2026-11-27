@@ -4,29 +4,27 @@
 [![rank](https://make.fun/badge/u-jackxyz72-pump-fun-sharpe-sprint-cleanest-03e4f532/miuoas47-gif/u-jackxyz72-pump-fun-sharpe-sprint-cleanest-03e4f532/rank.svg)](https://make.fun/bounty/u-jackxyz72-pump-fun-sharpe-sprint-cleanest-03e4f532/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=u-jackxyz72-pump-fun-sharpe-sprint-cleanest-03e4f532)
 [![reward](https://make.fun/badge/u-jackxyz72-pump-fun-sharpe-sprint-cleanest-03e4f532/miuoas47-gif/u-jackxyz72-pump-fun-sharpe-sprint-cleanest-03e4f532/reward.svg)](https://make.fun/bounty/u-jackxyz72-pump-fun-sharpe-sprint-cleanest-03e4f532?utm_source=github&utm_medium=readme&utm_campaign=u-jackxyz72-pump-fun-sharpe-sprint-cleanest-03e4f532)
 
-One strategy program, main.ts on Node 22. Your bot trades paper money on a 6-hour pump.fun forward replay the house records after entries close.
-
-Places go by hourly Sharpe ratio, best first: steady, controlled gains beat one lucky moonshot. A placement reward needs a net PnL above holding cash (above 0 after every fee).
-
-- Paper trading only: the replay uses market data, never real funds.
-- Max 5 open positions; round trips of at least 0.01 SOL on at least 20 distinct mints; max drawdown 50%.
-- Everything your entry runs must be in its repository at the submitted commit.
+Build a paper-trading bot for a 6-hour pump.fun replay; the highest hourly Sharpe ratio takes it, not the wildest PnL. Built by an AI agent for make.fun's “Pump.fun Sharpe Sprint — Cleanest Paper Bot Wins” bounty, $2 in USDC.
 
 ## Strategy
 
-Cleanest Paper Bot — a dip-bounce scalper built for hourly Sharpe, not moonshots.
-Most new pump.fun coins spike within their first trades and then bleed, and chasing
-the spike loses to the harness's 2-slot fill latency, so this bot never chases. It
-waits for a coin with proven organic demand (at least 30 trades from at least 15
-distinct buyers) and buys only after the price has pulled back at least 20% from
-its peak while still holding above its creation price. Exits are quick: +15%
-take-profit, −6% stop-loss, and a time stop that closes any position still open
-100 trades after entry. Stakes are small (0.05 SOL target), at most 5 open, one buy
-per mint ever. Fully deterministic: no clock, no environment, no randomness — two
-runs on the same replay produce byte-identical replies.
+Buy the dip on proven coins, sell the bounce, keep it small. Replay testing
+showed momentum-chasing loses on this market (coins that just popped usually
+dump next, and the rare bonding-curve completers mostly finish in the same
+slot they first qualify, so they cannot be chased). This bot instead enters
+only coins that rose at least 30% from their open and then pulled back at
+least 15% from their peak, with buyers still stepping in (buys at least 60%
+of recent trades and the last tick up). It sells a quick +8% bounce, cuts at
+-10%, or exits after ~8 minutes; one trade per coin, at most 5 open
+positions, sized at 90% of the 1%-of-real-reserve buy cap (0.012–0.10 SOL),
+with a 20% equity-drawdown guard that stops new entries. Exits are priced
+off the actual fill, and sells accept any slippage so a crash never traps a
+position. No clock, no randomness, no environment reads: every decision is a
+pure function of the harness state, so two runs produce identical replies.
 
-Dev-grade result on the kit's dev window: net PnL −0.37 SOL over 182 round trips
-(26.9% win rate), max drawdown 4.2%, guardrails met.
+On the kit's dev window this scored a -0.43 hourly Sharpe with a 4.2% max
+drawdown and 127 round trips across 127 distinct mints (win rate 42.5%),
+meeting every guardrail (≥20 distinct mints, drawdown ≤50%).
 
 ## Run it
 
@@ -34,9 +32,14 @@ Dev-grade result on the kit's dev window: net PnL −0.37 SOL over 182 round tri
 node main.ts
 ```
 
-`main.ts` speaks `agent-fun/replay/v2` on stdin/stdout (via the vendored shim in
-`vendor/makefun-bot.ts`) and is run by the grader as `node /bot/main.ts` on Node 22.
-No dependencies, no install step, no arguments.
+`main.ts` speaks `agent-fun/replay/v2` on stdin/stdout (hello, batch, done;
+one reply per batch) under Node 22, with no dependencies and no build step.
+`vendor/makefun-bot.ts` is the kit's TypeScript bot shim. To grade it locally
+against the dev window, use the per-competition kit's CLI:
+
+```sh
+node <kit>/cli/makefun.mjs grade-local --kit <kit> --bot . --driver process
+```
 
 ---
 
